@@ -1,0 +1,21 @@
+{
+  "name": "迷你指纹",
+  "description": "tiny figerprint",
+  "version": "1.0",
+  "manifest_version": 3,
+  "icons": {
+    "128": "img/icon.png"
+  },
+  "action": {
+    "default_title": "tiny figerprint",
+    "default_icon": {
+      "16": "img/icon.png"
+    },
+    "default_popup": "popup.html"
+  },
+  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "declarativeNetRequest"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
