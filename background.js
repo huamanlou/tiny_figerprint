@@ -77,7 +77,7 @@ class UAItem {
     this.name = name;
     this.version = version;
   }
-  parse(item) {
+  static parse(item) {
     const parts = item.split("/");
     return new UAItem(parts[0], parts[1]);
   }
@@ -128,10 +128,24 @@ class UAParser {
 }
 
 class EquipmentInfoHandler {
-  constructor(seed) {
-    this.nav = navigator;
-    // let seed = genRandomSeed();
+  constructor(nav, seed) {
+    this.nav = nav;
+    this.seed = null;
+    this.userAgent = null;
+    this.appVersion = null;
+
+    this.userAgentData = null;
+    this.brands = null;
+
+    this.fullVersionList = null;
+    this.uaFullVersion = null;
+
+    this.rawUserAgentData = null;
+    this.rawToJSON = null;
+    this.rawGetHighEntropyValues = null;
+
     if (seed) {
+      console.log("sssss", seed);
       this.setSeed(seed);
     }
   }
@@ -143,7 +157,9 @@ class EquipmentInfoHandler {
     let uaParser;
     try {
       uaParser = new UAParser(this.nav.userAgent);
+      console.log("uuuu", uaParser);
     } catch (err) {
+      console.log("eee", err);
       return;
     }
 
