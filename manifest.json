@@ -16,6 +16,7 @@
   "host_permissions": ["<all_urls>"],
   "permissions": ["storage", "declarativeNetRequest"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   }
 }
