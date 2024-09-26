@@ -14,7 +14,15 @@
     "default_popup": "popup.html"
   },
   "host_permissions": ["<all_urls>"],
-  "permissions": ["storage", "declarativeNetRequest"],
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "privacy",
+    "scripting",
+    "tabs",
+    "activeTab",
+    "webNavigation"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
