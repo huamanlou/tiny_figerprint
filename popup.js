@@ -4,30 +4,13 @@ document.addEventListener("DOMContentLoaded", function () {
   // 从 local 存储区域获取数据
   chrome.storage.local.get(["tiny_fingerprint_config"], function (res) {
     let config = res.tiny_fingerprint_config;
-    console.log("config", config);
+    // console.log("config", config);
     if (config) {
       document.getElementById("seed").value = config.seed;
-      // if (config.useragent) {
-      //   document.getElementById("useragent").checked = true;
-      // }
-      // if (config.webgl) {
-      //   document.getElementById("webgl").checked = true;
-      // }
-      // if (config.canvas) {
-      //   document.getElementById("canvas").checked = true;
-      // }
-      // if (config.audio) {
-      //   document.getElementById("audio").checked = true;
-      // }
-      // if (config.screen) {
-      //   document.getElementById("screen").checked = true;
-      // }
-      // if (config.webrtc) {
-      //   document.getElementById("webrtc").checked = true;
-      // }
+
       for (let key of checkKeys) {
         if (config[key]) {
-          document.getElementById(key).checked = true;
+          document.getElementById(key).checked = config[key] ? true : false;
         }
       }
     }

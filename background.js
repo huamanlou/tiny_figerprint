@@ -14,12 +14,12 @@ const genRandomSeed = function () {
 const defaultData = {
   config: {
     seed: "",
-    useragent: true,
-    webgl: true,
-    canvas: true,
-    audio: true,
-    screen: true,
-    webrtc: true,
+    useragent: false,
+    webgl: false,
+    canvas: false,
+    audio: false,
+    screen: false,
+    webrtc: false,
   },
   info: {
     userAgent: "",
@@ -51,7 +51,10 @@ const refreshRequestHeaderUA = async () => {
       defaultData.info.userAgent = eh.userAgent;
       defaultData.info.appVersion = eh.appVersion;
       // defaultData.info.userAgentData = eh.userAgentData;
-
+      //写入本地，防止刷新页面数据丢失
+      chrome.storage.local.set({
+        tiny_fingerprint_info: defaultData.info,
+      });
       console.log("infoinfoinfo", defaultData.info);
     }
     if (eh.brands) {
@@ -131,12 +134,20 @@ const initConfig = async () => {
   let res = await chrome.storage.local.get();
   console.log("local", res);
   if (res["tiny_fingerprint_config"]) {
+    console.log("merge config");
     defaultData.config = {
       ...defaultData.config,
       ...res["tiny_fingerprint_config"],
     };
-    console.log("defaultData", defaultData);
   }
+  if (res["tiny_fingerprint_info"]) {
+    console.log("merge info");
+    defaultData.config = {
+      ...defaultData.config,
+      ...res["tiny_fingerprint_info"],
+    };
+  }
+  console.log("defaultData", defaultData);
   //创建随机数
   if (!defaultData.config.seed) {
     defaultData.config.seed = genRandomSeed();
@@ -286,6 +297,7 @@ const modifyFingerPrint = function (tabId, config, info) {
   //修改audio指纹
   const modifyAudio = () => {
     //还原
+    console.log("auauauauau", config);
     if (!config.audio) {
       if (FINGERPRINT.rawObjects.createDynamicsCompressor) {
         FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor =
@@ -294,14 +306,16 @@ const modifyFingerPrint = function (tabId, config, info) {
       }
       return;
     }
-    //写入
+    //写入, 有bug，有2个固定值刷新随机出现
     if (!FINGERPRINT.rawObjects.createDynamicsCompressor) {
+      console.log("modify audio oooooo");
       FINGERPRINT.rawObjects.createDynamicsCompressor =
         FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor;
       FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor =
         new Proxy(FINGERPRINT.rawObjects.createDynamicsCompressor, {
           apply: (target, thisArg, args) => {
             const value = FINGERPRINT.seededRandom(config.seed);
+            console.log("eeeeee", value, thisArg);
             if (value === null) return target.apply(thisArg, args);
             const compressor = target.apply(thisArg, args);
             // 创建一个增益节点，添加噪音
@@ -311,6 +325,7 @@ const modifyFingerPrint = function (tabId, config, info) {
             compressor.connect(gain);
             // 将增益节点的输出连接到上下文的目标
             gain.connect(thisArg.destination);
+            console.log("proxy audio", value, compressor);
             return compressor;
           },
         });
@@ -520,6 +535,7 @@ const modifyFingerPrint = function (tabId, config, info) {
               let value = null;
               if (key === "userAgent" || key === "appVersion") {
                 // 获取useragen生成的数据，外面传进来
+                // console.log("xxx", key, info);
                 value = info[key];
               }
               if (value !== null) {
@@ -547,12 +563,13 @@ const modifyFingerPrint = function (tabId, config, info) {
   mockNavigator();
 };
 
-const injectScriptSolution = (tabId, url) => {
+const injectScriptSolution = async (tabId, url) => {
   const host = BASE.urlToHttpHost(url);
   if (!host) {
     return;
   }
   // 注入参数
+  await initConfig();
   const config = defaultData.config;
   const info = defaultData.info;
   chrome.scripting.executeScript({
