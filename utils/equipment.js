@@ -176,10 +176,8 @@ export class EquipmentInfoHandler {
     }
 
     /// userAgentData
-    // @ts-ignore
     if (this.nav.userAgentData) {
       if (!uaParser.extensions) return;
-      // @ts-ignore
       this.rawUserAgentData = this.nav.userAgentData;
       const brands = this.rawUserAgentData.brands;
       this.brands = brands.map((brand) => ({
@@ -187,9 +185,26 @@ export class EquipmentInfoHandler {
         version: getMainVersion(versionRandomOffset(brand.version, seed)),
       }));
 
-      // @ts-ignore
       this.rawGetHighEntropyValues =
         NavigatorUAData.prototype.getHighEntropyValues;
+
+      //添加hook
+      this.userAgentData = new Proxy(this.rawUserAgentData, {
+        get: (target, key) => {
+          let res = null;
+          switch (key) {
+            case "brands": {
+              res = this.brands;
+              break;
+            }
+          }
+          if (res === null) {
+            res = target[key];
+            if (typeof res === "function") return res.bind(target);
+          }
+          return res;
+        },
+      });
     }
   }
 

@@ -5,15 +5,80 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title></title>
+	<style>
+		#main {
+			width: 300px;
+			padding: 0 8px;
+			font-size: 14px;
+		}
 
+		.row {
+			display: flex;
+			line-height: 30px;
+		}
+
+		.row label {
+			width: 100px;
+		}
+
+		.save {
+			clear: both;
+			text-align: right;
+		}
+	</style>
 </head>
 
 <body>
-	<div>
-		seed：
-		<input type="text" id="seed" name="seed" />
+	<div id="main">
+		<h2>浏览器指纹修改配置</h2>
 
-		<button id="submit">重新生成指纹</button>
+		<div class="row">
+			<label>随机种子seed</label>
+			<input type="number" id="seed" name="seed" min="1000" step="1" disabled />
+			<button id="unlock_seed">解锁</button>
+		</div>
+
+		<div class="row">
+			<label>user Agent</label>
+			<input type="checkbox" id="useragent" name="useragent" />
+		</div>
+
+		<div class="row">
+			<label>webGL</label>
+			<input type="checkbox" id="webgl" name="webgl" />
+		</div>
+		<div class="row">
+			<label>canvas</label>
+			<input type="checkbox" id="canvas" name="canvas" />
+		</div>
+		<div class="row">
+			<label>audio</label>
+			<input type="checkbox" id="audio" name="audio" />
+		</div>
+		<div class="row">
+			<label>屏幕尺寸颜色</label>
+			<input type="checkbox" id="screen" name="screen" />
+		</div>
+
+		<div class="row">
+			<label>屏蔽webrtc</label>
+			<input type="checkbox" id="webrtc" name="webrtc" />
+		</div>
+		<div class="row">
+			<label>语言配置</label>
+			<a href="chrome://settings/languages" target="_blank">chrome://settings/languages</a>
+		</div>
+		<div class="row">
+			<label>quic关闭</label>
+			<a href="chrome://flags/#enable-quic" target="_blank">chrome://flags/#enable-quic</a>
+		</div>
+
+
+
+		<div class="save">
+			<button id="submit">保存</button>
+		</div>
+
 
 	</div>
 	<script src="popup.js"></script>
