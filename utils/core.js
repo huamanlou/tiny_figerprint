@@ -1,13 +1,24 @@
 //注入到页面核心方法，修改指纹
 export const modifyFingerPrint = function (tabId, config, info, win) {
-  console.log("mmmmmm", config, info);
+  console.log("mmmmmm", tabId, config, info);
   const FINGERPRINT = {
-    win: typeof win == "undefined" ? window : win,
+    tabId: null,
+    win: null,
+    config: null,
+    info: null,
     rawObjects: {},
     chars: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
     // hardwareConcurrencys: [2, 4, 8, 12, 16],
     colorDepths: [16, 24, 32],
     pixelDepths: [16, 24, 32],
+    initData: function (tabId, config, info, win) {
+      console.log("wwwww", win);
+      this.tabId = tabId;
+      this.config = config;
+      this.info = info;
+      this.win = typeof win == "undefined" ? window : win;
+      console.log("fffffffff", FINGERPRINT);
+    },
     seededRandom: (seed, max, min) => {
       max = max ?? 1;
       min = min ?? 0;
@@ -77,8 +88,8 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     //修改audio指纹
     modifyAudio: () => {
       //还原
-      console.log("auauauauau", config);
-      if (!config.audio) {
+      //   console.log("auauauauau", config);
+      if (!FINGERPRINT.config.audio) {
         if (FINGERPRINT.rawObjects.createDynamicsCompressor) {
           FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor =
             FINGERPRINT.rawObjects.createDynamicsCompressor;
@@ -88,14 +99,13 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
       }
       //写入, 有bug，有2个固定值刷新随机出现
       if (!FINGERPRINT.rawObjects.createDynamicsCompressor) {
-        console.log("modify audio oooooo");
+        // console.log("modify audio oooooo");
         FINGERPRINT.rawObjects.createDynamicsCompressor =
           FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor;
         FINGERPRINT.win.OfflineAudioContext.prototype.createDynamicsCompressor =
           new Proxy(FINGERPRINT.rawObjects.createDynamicsCompressor, {
             apply: (target, thisArg, args) => {
-              const value = FINGERPRINT.seededRandom(config.seed);
-              console.log("eeeeee", value, thisArg);
+              const value = FINGERPRINT.seededRandom(FINGERPRINT.config.seed);
               if (value === null) return target.apply(thisArg, args);
               const compressor = target.apply(thisArg, args);
               // 创建一个增益节点，添加噪音
@@ -105,7 +115,6 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
               compressor.connect(gain);
               // 将增益节点的输出连接到上下文的目标
               gain.connect(thisArg.destination);
-              console.log("proxy audio", value, compressor);
               return compressor;
             },
           });
@@ -114,7 +123,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     // 修改canvas指纹;
     modifyCanvas: () => {
       //还原
-      if (!config.canvas) {
+      if (!FINGERPRINT.config.canvas) {
         if (FINGERPRINT.rawObjects.toDataURL) {
           FINGERPRINT.win.HTMLCanvasElement.prototype.toDataURL =
             FINGERPRINT.rawObjects.toDataURL;
@@ -130,7 +139,9 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
           FINGERPRINT.rawObjects.toDataURL,
           {
             apply: (target, thisArg, args) => {
-              const value = FINGERPRINT.randomCanvasNoise(config.seed);
+              const value = FINGERPRINT.randomCanvasNoise(
+                FINGERPRINT.config.seed
+              );
               if (value !== null) {
                 let ctx = thisArg.getContext("2d");
                 if (ctx !== null) {
@@ -149,7 +160,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     //修改webgl指纹
     modifyWebgl: () => {
       //还原
-      if (!config.webgl) {
+      if (!FINGERPRINT.config.webgl) {
         if (FINGERPRINT.rawObjects.wglGetParameter) {
           FINGERPRINT.win.WebGLRenderingContext.prototype.getParameter =
             FINGERPRINT.rawObjects.wglGetParameter;
@@ -184,7 +195,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
             case UNMASKED_RENDERER_WEBGL: {
               const value = FINGERPRINT.seededEl(
                 FINGERPRINT.webglRendererList,
-                config.seed
+                FINGERPRINT.config.seed
               );
               if (value === null) break;
               return value;
@@ -223,7 +234,9 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
           if (args[1]) {
             if (args[1].includes("gl_FragColor")) {
               // const color = FINGERPRINT.getValue("other", "webgl", "color");
-              const color = FINGERPRINT.randomWebglColor(config.seed);
+              const color = FINGERPRINT.randomWebglColor(
+                FINGERPRINT.config.seed
+              );
               if (color) {
                 args[1] = args[1].replace(
                   mainFuncRegx,
@@ -231,8 +244,9 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
                 );
               }
             } else if (args[1].includes("gl_Position")) {
-              // const color = FINGERPRINT.getValue("other", "webgl", "color");
-              const color = FINGERPRINT.randomWebglColor(config.seed);
+              const color = FINGERPRINT.randomWebglColor(
+                FINGERPRINT.config.seed
+              );
               if (color) {
                 args[1] = args[1].replace(
                   mainFuncRegx,
@@ -265,7 +279,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     // 修改屏幕数据
     modifyScreen: () => {
       //还原
-      if (!config.screen) {
+      if (!FINGERPRINT.config.screen) {
         if (FINGERPRINT.rawObjects.screenDescriptor) {
           FINGERPRINT.win.Object.defineProperty(
             FINGERPRINT.win,
@@ -283,14 +297,16 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
             FINGERPRINT.win,
             "screen"
           );
-        const screenSize = FINGERPRINT.randomScreenSize(config.seed);
+        const screenSize = FINGERPRINT.randomScreenSize(
+          FINGERPRINT.config.seed
+        );
         const colorDepth = FINGERPRINT.seededEl(
           FINGERPRINT.colorDepths,
-          config.seed
+          FINGERPRINT.config.seed
         );
         const pixelDepth = FINGERPRINT.seededEl(
           FINGERPRINT.pixelDepths,
-          config.seed
+          FINGERPRINT.config.seed
         );
 
         FINGERPRINT.win.Object.defineProperty(FINGERPRINT.win, "screen", {
@@ -322,7 +338,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     // 模拟navigator返回内容
     mockNavigator: () => {
       //还原
-      if (!config.useragent) {
+      if (!FINGERPRINT.config.useragent) {
         if (FINGERPRINT.rawObjects.navigatorDescriptor) {
           FINGERPRINT.win.Object.defineProperty(
             FINGERPRINT.win,
@@ -347,8 +363,7 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
                 let value = null;
                 if (key === "userAgent" || key === "appVersion") {
                   // 获取useragen生成的数据，外面传进来
-                  // console.log("xxx", key, info);
-                  value = info[key];
+                  value = FINGERPRINT.info[key];
                 }
                 if (value !== null) {
                   return value;
@@ -371,11 +386,15 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
     iframeHtmlHook: () => {
       // 监听DOM初始化
       const observer = new MutationObserver((mutations) => {
-        if (mutations.length == 1) return;
+        if (mutations.length == 1) {
+          console.log("mutations.length", mutations.length);
+          return;
+        }
         for (const mutation of mutations) {
           for (const node of mutation.addedNodes) {
+            // console.log("for for for", node.nodeName);
             if (node.nodeName === "IFRAME") {
-              //   FingerprintHandler(node.contentWindow, config, info);
+              fingerprint_inject(tabId, config, info, node.contentWindow);
             }
           }
         }
@@ -401,12 +420,59 @@ export const modifyFingerPrint = function (tabId, config, info, win) {
         capture: true,
       });
     },
-  };
+    // iframe script hook
+    iframeScriptHook: () => {
+      if (
+        !FINGERPRINT.rawObjects.appendChild ||
+        !FINGERPRINT.rawObjects.insertBefore ||
+        !FINGERPRINT.rawObjects.replaceChild
+      ) {
+        const apply = (target, thisArg, args) => {
+          const res = target.apply(thisArg, args);
+          const node = args[0];
+          if (node?.tagName === "IFRAME") {
+            fingerprint_inject(tabId, config, info, node.contentWindow);
+          }
+          return res;
+        };
 
-  FINGERPRINT.iframeHtmlHook();
-  FINGERPRINT.modifyAudio();
-  FINGERPRINT.modifyCanvas();
-  FINGERPRINT.modifyWebgl();
-  FINGERPRINT.modifyScreen();
-  FINGERPRINT.mockNavigator();
+        if (!FINGERPRINT.rawObjects.appendChild) {
+          FINGERPRINT.rawObjects.appendChild =
+            FINGERPRINT.win.HTMLElement.prototype.appendChild;
+          FINGERPRINT.win.HTMLElement.prototype.appendChild = new Proxy(
+            FINGERPRINT.rawObjects.appendChild,
+            { apply }
+          );
+        }
+        if (!FINGERPRINT.rawObjects.insertBefore) {
+          FINGERPRINT.rawObjects.insertBefore =
+            FINGERPRINT.win.HTMLElement.prototype.insertBefore;
+          FINGERPRINT.win.HTMLElement.prototype.insertBefore = new Proxy(
+            FINGERPRINT.rawObjects.insertBefore,
+            { apply }
+          );
+        }
+        if (!FINGERPRINT.rawObjects.replaceChild) {
+          FINGERPRINT.rawObjects.replaceChild =
+            FINGERPRINT.win.HTMLElement.prototype.replaceChild;
+          FINGERPRINT.win.HTMLElement.prototype.replaceChild = new Proxy(
+            FINGERPRINT.rawObjects.replaceChild,
+            { apply }
+          );
+        }
+      }
+    },
+  };
+  const fingerprint_inject = function (tabId, config, info, win) {
+    FINGERPRINT.initData(tabId, config, info, win);
+    console.log("iiiiiiiiiiiii", FINGERPRINT);
+    FINGERPRINT.iframeHtmlHook();
+    FINGERPRINT.iframeScriptHook();
+    FINGERPRINT.modifyAudio();
+    FINGERPRINT.modifyCanvas();
+    FINGERPRINT.modifyWebgl();
+    FINGERPRINT.modifyScreen();
+    FINGERPRINT.mockNavigator();
+  };
+  fingerprint_inject(tabId, config, info, win);
 };

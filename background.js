@@ -139,8 +139,8 @@ const initConfig = async () => {
   }
   if (res["tiny_fingerprint_info"]) {
     console.log("merge info");
-    defaultData.config = {
-      ...defaultData.config,
+    defaultData.info = {
+      ...defaultData.info,
       ...res["tiny_fingerprint_info"],
     };
   }
@@ -185,6 +185,7 @@ const injectScriptSolution = async (tabId, url) => {
   await initConfig();
   const config = defaultData.config;
   const info = defaultData.info;
+  console.log("zzzzz", config, info);
   chrome.scripting.executeScript({
     target: {
       tabId,
